@@ -50,6 +50,9 @@
 // Support for host power management (suspend & wakeup)
 #include "Kaleidoscope-HostPowerManagement.h"
 
+// Map brackets to the thumb clusters
+#include "Kaleidoscope-SpaceCadet.h"
+
 
 /** This 'enum' is a list of all the macros used by the Model 01's firmware
   * The names aren't particularly important. What is important is that each
@@ -306,8 +309,18 @@ void setup() {
 
     // The HostPowerManagement plugin enables waking up the host from suspend,
     // and allows us to turn LEDs off when it goes to sleep.
-    &HostPowerManagement
+    &HostPowerManagement,
+
+    &SpaceCadet
   );
+
+  static kaleidoscope::SpaceCadet::KeyBinding cadetmap[] =
+    {{Key_LeftShift, Key_LeftParen, 250},
+     {Key_RightShift, Key_RightParen, 250},
+     {Key_LeftControl, Key_LeftBracket, 250},
+     {Key_RightControl, Key_RightBracket, 250},
+     SPACECADET_MAP_END};
+  SpaceCadet.map = cadetmap;
 
   // While we hope to improve this in the future, the NumPad plugin
   // needs to be explicitly told which keymap layer is your numpad layer

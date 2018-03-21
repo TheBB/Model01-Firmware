@@ -53,6 +53,11 @@
 // Map brackets to the thumb clusters
 #include "Kaleidoscope-SpaceCadet.h"
 
+// Guess the Host OS
+#define KALEIDOSCOPE_HOSTOS_GUESSER 1
+#include "Kaleidoscope-HostOS.h"
+#include "Kaleidoscope/HostOS-select.h"
+
 
 /** This 'enum' is a list of all the macros used by the Model 01's firmware
   * The names aren't particularly important. What is important is that each
@@ -184,6 +189,15 @@ static void versionInfoMacro(uint8_t keyState) {
   if (keyToggledOn(keyState)) {
     Macros.type(PSTR("Keyboardio Model 01 - Kaleidoscope "));
     Macros.type(PSTR(BUILD_INFORMATION));
+    Macros.type(PSTR(" Host OS guess: "));
+    if (HostOS.os() == kaleidoscope::hostos::LINUX)
+        Macros.type(PSTR("Linux"));
+    else if (HostOS.os() == kaleidoscope::hostos::OSX)
+        Macros.type(PSTR("OS X"));
+    else if (HostOS.os() == kaleidoscope::hostos::WINDOWS)
+        Macros.type(PSTR("Windows"));
+    else
+        Macros.type(PSTR("Other"));
   }
 }
 
@@ -311,7 +325,7 @@ void setup() {
     // and allows us to turn LEDs off when it goes to sleep.
     &HostPowerManagement,
 
-    &SpaceCadet
+    &SpaceCadet, &HostOS
   );
 
   static kaleidoscope::SpaceCadet::KeyBinding cadetmap[] =

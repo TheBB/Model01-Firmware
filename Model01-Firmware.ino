@@ -52,6 +52,12 @@
 #include "Kaleidoscope-HostOS.h"
 #include "Kaleidoscope/HostOS-select.h"
 
+// Unicode
+#include "kaleidoscope/hid.h"
+#include "Kaleidoscope-Unicode.h"
+
+// Leaders
+#include "Kaleidoscope-Leader.h"
 
 
 enum { MACRO_VERSION_INFO,
@@ -124,7 +130,7 @@ const Key keymaps[][ROWS][COLS] PROGMEM = {
    ShiftToLayer(INSPECT), Key_6, Key_7, Key_8,     Key_9,         Key_0,         LockLayer(NUMPAD),
    Key_Enter,     Key_Y, Key_U, Key_I,     Key_O,         Key_P,         Key_Equals,
                   Key_H, Key_J, Key_K,     Key_L,         Key_Semicolon, Key_Quote,
-   Key_RightAlt,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
+   LEAD(0),       Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
    Key_RightShift, Key_LeftAlt, Key_Spacebar, Key_RightControl,
    ShiftToLayer(FUNCTION)),
 
@@ -260,6 +266,42 @@ void hostPowerManagementEventHandler(kaleidoscope::HostPowerManagement::Event ev
   toggleLedsOnSuspendResume(event);
 }
 
+// We use Linux defaults for Unicode
+void unicodeCustomStart(void) {
+    kaleidoscope::hid::pressRawKey(Key_LeftControl);
+    kaleidoscope::hid::pressRawKey(Key_LeftShift);
+    kaleidoscope::hid::pressRawKey(Key_U);
+    kaleidoscope::hid::sendKeyboardReport();
+    kaleidoscope::hid::releaseRawKey(Key_LeftControl);
+    kaleidoscope::hid::releaseRawKey(Key_LeftShift);
+    kaleidoscope::hid::releaseRawKey(Key_U);
+    kaleidoscope::hid::sendKeyboardReport();
+}
+
+void unicodeCustomEnd(void) {
+    kaleidoscope::hid::pressRawKey(Key_Spacebar);
+    kaleidoscope::hid::sendKeyboardReport();
+    kaleidoscope::hid::releaseRawKey(Key_Spacebar);
+    kaleidoscope::hid::sendKeyboardReport();
+}
+
+static void digraph_aa(uint8_t) { Unicode.type(0xe5); }
+static void digraph_AA(uint8_t) { Unicode.type(0xc5); }
+static void digraph_ae(uint8_t) { Unicode.type(0xe6); }
+static void digraph_AE(uint8_t) { Unicode.type(0xc6); }
+static void digraph_oslash(uint8_t) { Unicode.type(0xf8); }
+static void digraph_OSLASH(uint8_t) { Unicode.type(0xd8); }
+
+// Leader map
+static const kaleidoscope::Leader::dictionary_t dictionary[] PROGMEM = LEADER_DICT(
+    {LEADER_SEQ(LEAD(0), Key_A, Key_A), digraph_aa},
+    {LEADER_SEQ(LEAD(0), LEAD(0), Key_A, Key_A), digraph_AA},
+    {LEADER_SEQ(LEAD(0), Key_A, Key_E), digraph_ae},
+    {LEADER_SEQ(LEAD(0), LEAD(0), Key_A, Key_E), digraph_AE},
+    {LEADER_SEQ(LEAD(0), Key_O, Key_Slash), digraph_oslash},
+    {LEADER_SEQ(LEAD(0), LEAD(0), Key_O, Key_Slash), digraph_OSLASH}
+);
+
 /** The 'setup' function is one of the two standard Arduino sketch functions.
   * It's called when your keyboard first powers up. This is where you set up
   * Kaleidoscope and any plugins.
@@ -275,6 +317,9 @@ void setup() {
   Kaleidoscope.use(
     // The boot greeting effect pulses the LED button for 10 seconds after the keyboard is first connected
     &BootGreetingEffect,
+
+    // I use this for digraphs
+    &Leader,
 
     // The hardware test mode, which can be invoked by tapping Prog, LED and the left Fn button at the same time.
     &TestMode,
@@ -302,7 +347,7 @@ void setup() {
     // and allows us to turn LEDs off when it goes to sleep.
     &HostPowerManagement,
 
-    &SpaceCadet, &HostOS
+    &SpaceCadet, &HostOS, &Unicode
   );
 
   static kaleidoscope::SpaceCadet::KeyBinding cadetmap[] =
@@ -312,6 +357,8 @@ void setup() {
      {Key_RightControl, Key_RightBracket, 250},
      SPACECADET_MAP_END};
   SpaceCadet.map = cadetmap;
+
+  Leader.dictionary = dictionary;
 
   // While we hope to improve this in the future, the NumPad plugin
   // needs to be explicitly told which keymap layer is your numpad layer
